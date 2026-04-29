@@ -21,7 +21,7 @@ declare global {
 }
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export interface AuthUser {
   sub: string;
