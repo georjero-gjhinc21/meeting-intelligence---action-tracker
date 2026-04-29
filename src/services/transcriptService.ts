@@ -1,5 +1,4 @@
 import { Meeting, ActionItem, MeetingSource, StakeholderRole, TrackingLevel } from '../types';
-import { extractActionItems } from './geminiService';
 
 const TEXT_EXTENSIONS = ['.txt', '.vtt', '.srt', '.md', '.json'];
 
@@ -111,7 +110,18 @@ export async function processTranscriptFile(file: File, opts: ProcessOptions): P
     const duration = estimateDuration(transcript);
     opts.onMeetingUpdated(id, { title, transcript, duration });
 
-    const extracted = await extractActionItems(transcript);
+    // Call API endpoint instead of direct Gemini import
+    const response = await fetch('/api/extract-actions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini extraction failed: ${response.statusText}`);
+    }
+
+    const { actions: extracted } = await response.json();
 
     const newActions: ActionItem[] = extracted.map((a, idx) => ({
       id: `act-${id}-${idx}`,

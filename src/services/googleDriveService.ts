@@ -24,8 +24,8 @@ const GAPI_SRC = 'https://apis.google.com/js/api.js';
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
-const API_KEY = process.env.GOOGLE_API_KEY;
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export const isGoogleDriveConfigured = (): boolean => Boolean(API_KEY && CLIENT_ID);
 
