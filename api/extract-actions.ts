@@ -53,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const text = response.text || "[]";
     const actionItems = JSON.parse(text);
 
-    return res.status(200).json(actionItems);
+    return res.status(200).json({ actions: actionItems });
   } catch (error) {
     console.error("Gemini Extraction Error:", error);
     return res.status(500).json({ error: "Internal server error" });

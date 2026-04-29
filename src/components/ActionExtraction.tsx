@@ -11,7 +11,6 @@ import { motion } from 'motion/react';
 import { useMeetings } from '../contexts/MeetingsContext';
 import { StakeholderRole, ActionItem, TrackingLevel } from '../types';
 import ActionDetailModal from './ActionDetailModal';
-import { extractActionItems } from '../services/geminiService';
 
 export default function ActionExtraction() {
   const { actions, addActions } = useMeetings();
@@ -28,7 +27,19 @@ export default function ActionExtraction() {
         CEO: Yes, let's make sure we hit the Sunday deadline for the VC deck.
         CFO: I'll need the budget breakdown by Friday.
       `;
-      const extracted = await extractActionItems(mockTranscript);
+
+      // Call the API endpoint instead of direct Gemini call
+      const response = await fetch('/api/extract-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: mockTranscript })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.statusText}`);
+      }
+
+      const { actions: extracted } = await response.json();
 
       const newActions: ActionItem[] = extracted.map((a, idx) => ({
         id: `EXT-${Date.now()}-${idx}`,
