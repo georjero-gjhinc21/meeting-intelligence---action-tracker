@@ -1,183 +1,150 @@
-import { supabase } from '../lib/supabase';
+import { Meeting, ActionItem, MeetingSource, StakeholderRole, TrackingLevel } from '../types';
+import { extractActionItems } from './geminiService';
 
-interface ExtractedAction {
-  title: string;
-  description: string;
-  role: string;
-  level: string;
-  priority: string;
-  due_date?: string;
-  chain_of_thought?: string;
+const TEXT_EXTENSIONS = ['.txt', '.vtt', '.srt', '.md', '.json'];
+
+export function isTranscriptFile(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return TEXT_EXTENSIONS.some(ext => lower.endsWith(ext));
+}
+
+export function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
 }
 
 /**
- * Strip VTT/SRT timing codes from transcript files
+ * Strip VTT/SRT timing/sequence lines, keep speaker text.
+ * Teams and Meet both export VTT, Zoom exports SRT.
  */
-function stripTimingCodes(content: string): string {
-  // Remove VTT headers
-  let cleaned = content.replace(/^WEBVTT\s*\n/gm, '');
-
-  // Remove timing lines (00:00:12.340 --> 00:00:15.430)
-  cleaned = cleaned.replace(/\d{2}:\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}\.\d{3}/g, '');
-
-  // Remove VTT cue identifiers (numbers on their own line)
-  cleaned = cleaned.replace(/^\d+\s*$/gm, '');
-
-  // Remove speaker labels like <v Speaker Name>
-  cleaned = cleaned.replace(/<v\s+[^>]+>/gi, '');
-
-  // Remove any remaining HTML-like tags
-  cleaned = cleaned.replace(/<[^>]+>/g, '');
-
-  // Collapse multiple newlines
-  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-
-  return cleaned.trim();
-}
-
-/**
- * Infer a meeting title from filename or content
- */
-function inferTitle(filename: string, content: string): string {
-  // Remove file extension and clean up
-  let title = filename.replace(/\.(txt|vtt|srt|docx?)$/i, '');
-
-  // Replace underscores/dashes with spaces
-  title = title.replace(/[_-]+/g, ' ');
-
-  // Capitalize first letter of each word
-  title = title.replace(/\b\w/g, l => l.toUpperCase());
-
-  // If title is generic or too short, try to extract from content
-  if (title.length < 5 || /^(transcript|meeting|recording)/i.test(title)) {
-    const firstLine = content.split('\n')[0];
-    if (firstLine && firstLine.length > 5 && firstLine.length < 100) {
-      title = firstLine.substring(0, 60) + (firstLine.length > 60 ? '...' : '');
-    }
-  }
-
-  return title;
-}
-
-/**
- * Process a transcript file and extract action items using Gemini
- */
-export async function processTranscript(
-  file: File,
-  source: string,
-  userId: string
-): Promise<{ meetingId: string; actionCount: number }> {
-  try {
-    // Read file content
-    const content = await file.text();
-    const cleanedTranscript = stripTimingCodes(content);
-    const title = inferTitle(file.name, cleanedTranscript);
-
-    // Create meeting record first
-    const { data: meeting, error: meetingError } = await supabase
-      .from('meetings')
-      .insert({
-        user_id: userId,
-        title,
-        source,
-        transcript: cleanedTranscript,
-        status: 'Processing',
-        folder_path: file.webkitRelativePath || file.name
+export function normalizeTranscript(raw: string, filename: string): string {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith('.vtt') || lower.endsWith('.srt')) {
+    return raw
+      .split(/\r?\n/)
+      .filter(line => {
+        const t = line.trim();
+        if (!t) return false;
+        if (t === 'WEBVTT') return false;
+        if (/^\d+$/.test(t)) return false; // sequence numbers
+        if (/-->/.test(t)) return false; // timestamp lines
+        if (/^NOTE\b/.test(t)) return false;
+        return true;
       })
-      .select()
-      .single();
+      .join('\n');
+  }
+  return raw;
+}
 
-    if (meetingError) throw meetingError;
+export function inferTitle(filename: string, content: string): string {
+  // Prefer markdown H1 or "Meeting Title:" inside content
+  const m = content.match(/^#\s+(.+)$/m) || content.match(/Meeting(?:\s+Title)?:\s*(.+)/i);
+  if (m && m[1].trim().length > 2) return m[1].trim();
 
-    // Call Gemini API to extract actions
-    try {
-      const response = await fetch('/api/extract-actions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: cleanedTranscript })
-      });
+  // Fall back to filename, prettified
+  const base = filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+  if (!base) return 'Untitled Meeting';
+  return base.replace(/\b\w/g, c => c.toUpperCase());
+}
 
-      if (!response.ok) {
-        throw new Error(`Gemini extraction failed: ${response.statusText}`);
-      }
+export function inferPlatform(filename: string, source: MeetingSource): Meeting['platform'] {
+  const lower = filename.toLowerCase();
+  if (source === 'Microsoft Teams' || lower.includes('teams')) return 'Microsoft Teams';
+  if (source === 'Google Drive' || lower.includes('meet')) return 'Google Meet';
+  if (lower.includes('zoom')) return 'Zoom';
+  if (lower.includes('chime')) return 'AWS Chime';
+  return 'Local File';
+}
 
-      const { actions } = await response.json() as { actions: ExtractedAction[] };
+export function estimateDuration(content: string): string {
+  // Rough heuristic: ~150 words per minute spoken
+  const words = content.trim().split(/\s+/).length;
+  if (words < 50) return '—';
+  const mins = Math.max(1, Math.round(words / 150));
+  if (mins >= 60) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}h ${m}m`;
+  }
+  return `${mins}m`;
+}
 
-      // Insert action items
-      if (actions && actions.length > 0) {
-        const actionItems = actions.map(action => ({
-          meeting_id: meeting.id,
-          user_id: userId,
-          title: action.title,
-          description: action.description,
-          role: action.role,
-          level: action.level,
-          priority: action.priority,
-          due_date: action.due_date || null,
-          chain_of_thought: action.chain_of_thought || null,
-          status: 'Pending'
-        }));
+export interface ProcessOptions {
+  source: MeetingSource;
+  folderPath?: string;
+  onMeetingCreated: (meeting: Meeting) => void;
+  onMeetingUpdated: (id: string, patch: Partial<Meeting>) => void;
+  onActionsExtracted: (actions: ActionItem[]) => void;
+}
 
-        const { error: actionsError } = await supabase
-          .from('action_items')
-          .insert(actionItems);
+export async function processTranscriptFile(file: File, opts: ProcessOptions): Promise<void> {
+  const id = `m-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const folderPath = opts.folderPath || (file as any).webkitRelativePath || file.name;
 
-        if (actionsError) throw actionsError;
-      }
+  // Show "Processing" row in UI immediately
+  const placeholder: Meeting = {
+    id,
+    title: inferTitle(file.name, ''),
+    date: new Date(file.lastModified || Date.now()).toISOString().slice(0, 10),
+    duration: '—',
+    platform: inferPlatform(file.name, opts.source),
+    status: 'Processing',
+    folderPath,
+    source: opts.source,
+  };
+  opts.onMeetingCreated(placeholder);
 
-      // Update meeting status to Processed
-      await supabase
-        .from('meetings')
-        .update({ status: 'Processed' })
-        .eq('id', meeting.id);
+  try {
+    const raw = await readFileAsText(file);
+    const transcript = normalizeTranscript(raw, file.name);
 
-      return { meetingId: meeting.id, actionCount: actions?.length || 0 };
-
-    } catch (extractionError) {
-      // Mark meeting as failed
-      await supabase
-        .from('meetings')
-        .update({ status: 'Failed' })
-        .eq('id', meeting.id);
-
-      throw extractionError;
+    if (!transcript.trim()) {
+      opts.onMeetingUpdated(id, { status: 'Failed', errorMessage: 'Empty file' });
+      return;
     }
 
-  } catch (error) {
-    console.error('Transcript processing error:', error);
-    throw error;
+    const title = inferTitle(file.name, transcript);
+    const duration = estimateDuration(transcript);
+    opts.onMeetingUpdated(id, { title, transcript, duration });
+
+    const extracted = await extractActionItems(transcript);
+
+    const newActions: ActionItem[] = extracted.map((a, idx) => ({
+      id: `act-${id}-${idx}`,
+      title: a.title || 'Untitled Action',
+      description: a.description || '',
+      role: (a.role as StakeholderRole) || StakeholderRole.COO,
+      level: (a.level as TrackingLevel) || TrackingLevel.TASK,
+      status: 'Pending',
+      priority: (a.priority as ActionItem['priority']) || 'Medium',
+      sourceMeetingId: id,
+      dueDate: a.dueDate,
+      chainOfThought: a.chainOfThought,
+    }));
+
+    opts.onActionsExtracted(newActions);
+    opts.onMeetingUpdated(id, { status: 'Processed' });
+  } catch (err: any) {
+    console.error('Failed to process', file.name, err);
+    opts.onMeetingUpdated(id, {
+      status: 'Failed',
+      errorMessage: err?.message || 'Extraction failed'
+    });
   }
 }
 
 /**
- * Process multiple transcripts sequentially (to avoid rate limits)
+ * Process files sequentially so we don't hammer Gemini with concurrent requests.
  */
-export async function processTranscriptBatch(
-  files: File[],
-  source: string,
-  userId: string,
-  onProgress?: (current: number, total: number, filename: string) => void
-): Promise<{ processed: number; failed: number }> {
-  let processed = 0;
-  let failed = 0;
-
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    onProgress?.(i + 1, files.length, file.name);
-
-    try {
-      await processTranscript(file, source, userId);
-      processed++;
-
-      // Small delay between calls to avoid rate limiting
-      if (i < files.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    } catch (error) {
-      console.error(`Failed to process ${file.name}:`, error);
-      failed++;
-    }
+export async function processFiles(files: File[], opts: ProcessOptions): Promise<{ processed: number; skipped: number }> {
+  const transcripts = files.filter(f => isTranscriptFile(f.name));
+  const skipped = files.length - transcripts.length;
+  for (const f of transcripts) {
+    await processTranscriptFile(f, opts);
   }
-
-  return { processed, failed };
+  return { processed: transcripts.length, skipped };
 }

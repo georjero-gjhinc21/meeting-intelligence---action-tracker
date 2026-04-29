@@ -8,7 +8,7 @@ import {
   BrainCircuit,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useMeetings } from '../contexts/MeetingsContext';
+import { useMeetings } from '../context/MeetingsContext';
 
 export default function Dashboard() {
   const { meetings, actions } = useMeetings();

@@ -8,7 +8,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useMeetings } from '../contexts/MeetingsContext';
+import { useMeetings } from '../context/MeetingsContext';
 import { StakeholderRole, ActionItem, TrackingLevel } from '../types';
 import ActionDetailModal from './ActionDetailModal';
 
