@@ -1,28 +1,24 @@
 import React from 'react';
-import { 
-  Search, 
-  MessageSquare, 
-  Clock, 
-  CheckCircle2, 
-  History,
+import {
+  Search,
+  MessageSquare,
   BrainCircuit,
-  Filter,
   ExternalLink,
   Sparkles,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { MOCK_ACTIONS } from '../constants';
-import { StakeholderRole, ActionItem } from '../types';
+import { useMeetings } from '../contexts/MeetingsContext';
+import { StakeholderRole, ActionItem, TrackingLevel } from '../types';
 import ActionDetailModal from './ActionDetailModal';
 import { extractActionItems } from '../services/geminiService';
 
 export default function ActionExtraction() {
+  const { actions, addActions } = useMeetings();
   const [selectedRole, setSelectedRole] = React.useState<StakeholderRole | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedAction, setSelectedAction] = React.useState<ActionItem | null>(null);
   const [isExtracting, setIsExtracting] = React.useState(false);
-  const [actions, setActions] = React.useState<ActionItem[]>(MOCK_ACTIONS);
 
   const handleSmartExtract = async () => {
     setIsExtracting(true);
@@ -33,21 +29,21 @@ export default function ActionExtraction() {
         CFO: I'll need the budget breakdown by Friday.
       `;
       const extracted = await extractActionItems(mockTranscript);
-      
+
       const newActions: ActionItem[] = extracted.map((a, idx) => ({
         id: `EXT-${Date.now()}-${idx}`,
         title: a.title || 'Untitled Action',
         description: a.description || '',
         role: (a.role as StakeholderRole) || StakeholderRole.COO,
-        level: (a.level as any) || 'Task',
+        level: (a.level as TrackingLevel) || TrackingLevel.TASK,
         status: 'Pending',
-        priority: (a.priority as any) || 'Medium',
+        priority: (a.priority as ActionItem['priority']) || 'Medium',
         sourceMeetingId: 'm3',
         dueDate: a.dueDate,
-        chainOfThought: a.chainOfThought
+        chainOfThought: a.chainOfThought,
       }));
 
-      setActions(prev => [...newActions, ...prev]);
+      addActions(newActions);
     } catch (err) {
       console.error(err);
     } finally {
@@ -55,10 +51,10 @@ export default function ActionExtraction() {
     }
   };
 
-  const filteredActions = (selectedRole === 'ALL' 
-    ? actions 
+  const filteredActions = (selectedRole === 'ALL'
+    ? actions
     : actions.filter(a => a.role === selectedRole)
-  ).filter(a => 
+  ).filter(a =>
     a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -92,7 +88,7 @@ export default function ActionExtraction() {
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight uppercase">Action Tracker</h1>
           <p className="text-slate-500 text-sm mt-1">Cross-referenced intelligence with voice and role validation.</p>
         </div>
-        <button 
+        <button
           onClick={handleSmartExtract}
           disabled={isExtracting}
           className="text-xs bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
@@ -109,8 +105,8 @@ export default function ActionExtraction() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search within extracted intelligence..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -142,6 +138,11 @@ export default function ActionExtraction() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {filteredActions.length === 0 && (
+          <div className="xl:col-span-2 p-12 text-center text-sm text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+            No actions match the current filter.
+          </div>
+        )}
         {filteredActions.map((action, idx) => (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -163,7 +164,7 @@ export default function ActionExtraction() {
                   </h3>
                 </div>
                 <div className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest ${getRoleBg(action.role)}`}>
-                   {action.role}
+                  {action.role}
                 </div>
               </div>
 
@@ -203,7 +204,7 @@ export default function ActionExtraction() {
                 </div>
               </div>
             </div>
-            
+
             <div className="px-8 py-5 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center group-hover:bg-indigo-50/30 transition-colors">
               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 <MessageSquare className="w-3.5 h-3.5" />
@@ -217,9 +218,9 @@ export default function ActionExtraction() {
         ))}
       </div>
 
-      <ActionDetailModal 
-        action={selectedAction} 
-        onClose={() => setSelectedAction(null)} 
+      <ActionDetailModal
+        action={selectedAction}
+        onClose={() => setSelectedAction(null)}
       />
     </div>
   );

@@ -1,23 +1,46 @@
 import React from 'react';
-import { 
-  BarChart3, 
-  Users, 
-  Clock, 
-  CheckCircle2, 
-  TrendingUp, 
+import {
+  BarChart3,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
   ArrowRight,
-  BrainCircuit
+  BrainCircuit,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { MOCK_ACTIONS, MOCK_MEETINGS } from '../constants';
+import { useMeetings } from '../contexts/MeetingsContext';
 
 export default function Dashboard() {
+  const { meetings, actions } = useMeetings();
+
   const stats = [
-    { label: 'Meetings Scanned', value: MOCK_MEETINGS.length, icon: BarChart3, color: 'text-blue-600' },
-    { label: 'Identified Actions', value: MOCK_ACTIONS.length, icon: BrainCircuit, color: 'text-purple-600' },
-    { label: 'Pending Validations', value: 2, icon: Clock, color: 'text-amber-600' },
-    { label: 'Resolved Tasks', value: 1, icon: CheckCircle2, color: 'text-emerald-600' },
+    {
+      label: 'Meetings Scanned',
+      value: meetings.length,
+      icon: BarChart3,
+      color: 'text-blue-600',
+    },
+    {
+      label: 'Identified Actions',
+      value: actions.length,
+      icon: BrainCircuit,
+      color: 'text-purple-600',
+    },
+    {
+      label: 'Pending Validations',
+      value: actions.filter(a => a.status === 'Pending').length,
+      icon: Clock,
+      color: 'text-amber-600',
+    },
+    {
+      label: 'Resolved Tasks',
+      value: actions.filter(a => a.status === 'Completed').length,
+      icon: CheckCircle2,
+      color: 'text-emerald-600',
+    },
   ];
+
+  const highPriority = actions.filter(a => a.priority === 'High');
 
   return (
     <div className="p-8 space-y-8" id="dashboard-view">
@@ -58,20 +81,25 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="space-y-4">
-            {MOCK_ACTIONS.filter(a => a.priority === 'High').map((action) => (
-              <div 
-                key={action.id} 
+            {highPriority.length === 0 && (
+              <p className="text-xs text-slate-400 py-8 text-center">
+                No high-priority actions yet. Ingest a transcript to populate this view.
+              </p>
+            )}
+            {highPriority.slice(0, 5).map((action) => (
+              <div
+                key={action.id}
                 className="p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all cursor-pointer"
               >
                 <div className="flex items-start justify-between">
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-w-0">
                     <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
                       {action.role}
                     </span>
                     <h3 className="font-bold text-slate-800 text-sm leading-snug">{action.title}</h3>
                     <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{action.description}</p>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase font-mono tracking-tighter">
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase font-mono tracking-tighter shrink-0 ml-3">
                     {action.level}
                   </span>
                 </div>
@@ -88,31 +116,42 @@ export default function Dashboard() {
             </h2>
           </div>
           <div className="space-y-8">
-            {MOCK_MEETINGS.map((meeting) => (
+            {meetings.length === 0 && (
+              <p className="text-xs text-slate-400 py-8 text-center">
+                No meetings ingested yet. Open the Transcripts tab to connect a source.
+              </p>
+            )}
+            {meetings.slice(0, 6).map((meeting) => (
               <div key={meeting.id} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800">{meeting.title}</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-800 truncate block">{meeting.title}</span>
                     <p className="text-[10px] text-slate-400 uppercase tracking-wider">{meeting.platform}</p>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider ${
-                    meeting.status === 'Processed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shrink-0 ml-3 ${
+                    meeting.status === 'Processed' ? 'bg-emerald-50 text-emerald-700'
+                    : meeting.status === 'Failed' ? 'bg-rose-50 text-rose-700'
+                    : 'bg-amber-50 text-amber-700'
                   }`}>
                     {meeting.status}
                   </span>
                 </div>
                 <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: meeting.status === 'Processed' ? '100%' : '65%' }}
+                    animate={{ width: meeting.status === 'Processed' ? '100%' : meeting.status === 'Failed' ? '100%' : '65%' }}
                     transition={{ duration: 1, ease: "easeOut" }}
-                    className={`h-full ${meeting.status === 'Processed' ? 'bg-indigo-500' : 'bg-amber-500'}`}
+                    className={`h-full ${
+                      meeting.status === 'Processed' ? 'bg-indigo-500'
+                      : meeting.status === 'Failed' ? 'bg-rose-500'
+                      : 'bg-amber-500'
+                    }`}
                   />
                 </div>
               </div>
             ))}
           </div>
-          
+
           <div className="mt-10 p-5 bg-slate-50 border border-slate-100 rounded-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <BrainCircuit className="w-16 h-16 text-indigo-600" />
@@ -123,8 +162,9 @@ export default function Dashboard() {
                 <p className="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Intelligence Pulse</p>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Detection confidence at 98.4% for C-Suite meeting roles. 
-                3 new action items detected in "Security Update".
+                {actions.length === 0
+                  ? 'Awaiting first transcript ingestion to begin extraction.'
+                  : `${actions.length} action items extracted across ${meetings.length} meetings. ${highPriority.length} flagged high priority.`}
               </p>
             </div>
           </div>
