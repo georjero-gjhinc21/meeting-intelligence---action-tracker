@@ -1,0 +1,6 @@
+{
+  "name": "Meeting Intelligence & Action Tracker",
+  "description": "Enterprise-grade meeting analysis and action tracking system. Extracts role-based action items and maps them to a strategic hierarchy from Board Actions to Tasks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
