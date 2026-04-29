@@ -5,6 +5,8 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MeetingsProvider } from './contexts/MeetingsContext';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import MeetingList from './components/MeetingList';
@@ -13,6 +15,8 @@ import ActionExtraction from './components/ActionExtraction';
 import SalesforceSync from './components/SalesforceSync';
 import { BrainCircuit, LogOut } from 'lucide-react';
 import { supabase } from './lib/supabase';
+
+const queryClient = new QueryClient();
 
 export default function App() {
   const [session, setSession] = React.useState(null);
@@ -50,13 +54,15 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans" id="app-container">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab}
-        userEmail={session?.user?.email ?? ''}
-        onSignOut={handleSignOut}
-      />
+    <QueryClientProvider client={queryClient}>
+      <MeetingsProvider>
+        <div className="flex h-screen bg-slate-50 overflow-hidden font-sans" id="app-container">
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            userEmail={session?.user?.email ?? ''}
+            onSignOut={handleSignOut}
+          />
       
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
@@ -119,6 +125,8 @@ export default function App() {
           </div>
         </footer>
       </main>
-    </div>
+        </div>
+      </MeetingsProvider>
+    </QueryClientProvider>
   );
 }
