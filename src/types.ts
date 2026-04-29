@@ -28,14 +28,46 @@ export interface ActionItem {
   sourceMeetingId: string;
   dueDate?: string;
   chainOfThought?: string;
+  salesforceId?: string;
 }
 
 export interface Meeting {
   id: string;
   title: string;
-  date: string;
-  duration: string;
-  platform: 'Google Meet' | 'Microsoft Teams' | 'Zoom' | 'AWS Chime';
-  status: 'Processed' | 'Processing' | 'Pending';
-  folderPath: string;
+  transcript?: string;
+  source?: string;
+  duration?: string;
+  status?: string;
+  folderPath?: string;
+  userId: string;
+  createdAt: string;
+}
+
+// Database types for direct Supabase usage (snake_case)
+export interface DatabaseMeeting {
+  id: string;
+  user_id: string;
+  title: string;
+  transcript?: string;
+  source?: string;
+  duration?: string;
+  status?: string;
+  folder_path?: string;
+  created_at: string;
+}
+
+export interface DatabaseActionItem {
+  id: string;
+  meeting_id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  role?: string;
+  level?: string;
+  status?: string;
+  priority?: string;
+  due_date?: string;
+  chain_of_thought?: string;
+  salesforce_id?: string;
+  created_at: string;
 }

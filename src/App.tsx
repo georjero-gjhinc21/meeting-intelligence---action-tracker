@@ -11,10 +11,32 @@ import MeetingList from './components/MeetingList';
 import HierarchyView from './components/HierarchyView';
 import ActionExtraction from './components/ActionExtraction';
 import SalesforceSync from './components/SalesforceSync';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, LogOut } from 'lucide-react';
+import { supabase } from './lib/supabase';
 
 export default function App() {
+  const [session, setSession] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState('dashboard');
+
+  React.useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -29,7 +51,12 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans" id="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        userEmail={session?.user?.email ?? ''}
+        onSignOut={handleSignOut}
+      />
       
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
@@ -42,20 +69,27 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-6">
-             <div className="hidden md:flex items-center gap-4 text-[10px] font-bold text-emerald-600 tracking-tight">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-               LEGAL COMPLIANCE: TRANSCRIPTS ONLY
-             </div>
-             <div className="h-8 w-[1px] bg-slate-100" />
-             <div className="flex items-center gap-3">
-               <div className="text-right hidden sm:block">
-                 <p className="text-xs font-bold text-slate-800 tracking-tight">George Rest</p>
-                 <p className="text-[10px] text-slate-400 uppercase tracking-wider">Project Owner</p>
-               </div>
-               <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-sm">
-                 GR
-               </div>
-             </div>
+            {session?.user?.email ? (
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-xs font-bold text-slate-800 tracking-tight">{session.user.email}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">Authenticated User</p>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-sm">
+                  {session.user.email?.[0]?.toUpperCase() ?? 'U'}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-slate-800 tracking-tight">George Rest</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">Project Owner</p>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-sm">
+                  GR
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
