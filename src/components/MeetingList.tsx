@@ -12,6 +12,7 @@ import {
   FileText,
   Loader2
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useMeetings } from '../contexts/MeetingsContext';
 import { processTranscriptBatch } from '../services/transcriptService';
 import { openGoogleDrivePicker, downloadGoogleDriveFile } from '../services/googleDriveService';
@@ -39,7 +40,7 @@ export default function MeetingList() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const folderInputRef = React.useRef<HTMLInputElement>(null);
 
-  const { data: user } = React.useQuery({
+  const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
       const { data } = await supabase.auth.getUser();
