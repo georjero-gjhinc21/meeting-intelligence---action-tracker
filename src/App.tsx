@@ -1,23 +1,23 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { MeetingsProvider } from './context/MeetingsContext';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import MeetingList from './components/MeetingList';
 import HierarchyView from './components/HierarchyView';
 import ActionExtraction from './components/ActionExtraction';
 import SalesforceSync from './components/SalesforceSync';
-import SignInScreen from './components/SignInScreen';
-import { MeetingsProvider } from './context/MeetingsContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
 import { BrainCircuit } from 'lucide-react';
 
+const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!CLERK_KEY) {
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env.local');
+}
+
 function AuthenticatedApp() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [activeTab, setActiveTab] = React.useState('dashboard');
 
   const renderContent = () => {
@@ -31,9 +31,9 @@ function AuthenticatedApp() {
     }
   };
 
-  const initials = user
-    ? user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-    : '';
+  const userName = user?.fullName || user?.firstName || 'User';
+  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
+  const initials = userName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <MeetingsProvider>
@@ -58,23 +58,18 @@ function AuthenticatedApp() {
               <div className="h-8 w-[1px] bg-slate-100" />
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold text-slate-800 tracking-tight">
-                    {user?.name || 'Guest'}
-                  </p>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">
-                    {user?.provider === 'demo' ? 'Demo Session' : 'Project Owner'}
-                  </p>
+                  <p className="text-xs font-bold text-slate-800 tracking-tight">{userName}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">Authenticated</p>
                 </div>
-                {user?.picture ? (
+                {user?.imageUrl ? (
                   <img
-                    src={user.picture}
-                    referrerPolicy="no-referrer"
-                    alt={user.name}
+                    src={user.imageUrl}
+                    alt={userName}
                     className="w-9 h-9 rounded-full border border-slate-200"
                   />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-sm">
-                    {initials || 'U'}
+                    {initials}
                   </div>
                 )}
               </div>
@@ -112,16 +107,15 @@ function AuthenticatedApp() {
   );
 }
 
-function Gate() {
-  const { user } = useAuth();
-  if (!user) return <SignInScreen />;
-  return <AuthenticatedApp />;
-}
-
 export default function App() {
   return (
-    <AuthProvider>
-      <Gate />
-    </AuthProvider>
+    <ClerkProvider publishableKey={CLERK_KEY}>
+      <SignedIn>
+        <AuthenticatedApp />
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </ClerkProvider>
   );
 }

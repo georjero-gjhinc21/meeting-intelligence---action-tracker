@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Meeting, ActionItem } from '../types';
 import { MOCK_MEETINGS, MOCK_ACTIONS } from '../constants';
 
@@ -6,28 +7,24 @@ interface MeetingsContextValue {
   meetings: Meeting[];
   actions: ActionItem[];
   addMeeting: (meeting: Meeting) => void;
-  updateMeeting: (id: string, patch: Partial<Meeting>) => void;
-  addActions: (actions: ActionItem[]) => void;
+  updateMeeting: (id: string, updates: Partial<Meeting>) => void;
   removeMeeting: (id: string) => void;
-  clearAll: () => void;
+  addActions: (actions: ActionItem[]) => void;
 }
 
 const MeetingsContext = createContext<MeetingsContextValue | null>(null);
 
-export function MeetingsProvider({ children }: { children: ReactNode }) {
-  const [meetings, setMeetings] = useState<Meeting[]>(() => [...MOCK_MEETINGS] as unknown as Meeting[]);
-  const [actions, setActions] = useState<ActionItem[]>(() => [...MOCK_ACTIONS]);
+export function MeetingsProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useUser();
+  const [meetings, setMeetings] = useState<Meeting[]>(MOCK_MEETINGS);
+  const [actions, setActions] = useState<ActionItem[]>(MOCK_ACTIONS);
 
-  const addMeeting = useCallback((m: Meeting) => {
-    setMeetings(prev => [m, ...prev]);
+  const addMeeting = useCallback((meeting: Meeting) => {
+    setMeetings(prev => [meeting, ...prev]);
   }, []);
 
-  const updateMeeting = useCallback((id: string, patch: Partial<Meeting>) => {
-    setMeetings(prev => prev.map(m => (m.id === id ? { ...m, ...patch } : m)));
-  }, []);
-
-  const addActions = useCallback((newActions: ActionItem[]) => {
-    setActions(prev => [...newActions, ...prev]);
+  const updateMeeting = useCallback((id: string, updates: Partial<Meeting>) => {
+    setMeetings(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
   }, []);
 
   const removeMeeting = useCallback((id: string) => {
@@ -35,14 +32,20 @@ export function MeetingsProvider({ children }: { children: ReactNode }) {
     setActions(prev => prev.filter(a => a.sourceMeetingId !== id));
   }, []);
 
-  const clearAll = useCallback(() => {
-    setMeetings([]);
-    setActions([]);
+  const addActions = useCallback((newActions: ActionItem[]) => {
+    setActions(prev => [...newActions, ...prev]);
   }, []);
 
   return (
     <MeetingsContext.Provider
-      value={{ meetings, actions, addMeeting, updateMeeting, addActions, removeMeeting, clearAll }}
+      value={{
+        meetings,
+        actions,
+        addMeeting,
+        updateMeeting,
+        removeMeeting,
+        addActions
+      }}
     >
       {children}
     </MeetingsContext.Provider>
@@ -50,7 +53,9 @@ export function MeetingsProvider({ children }: { children: ReactNode }) {
 }
 
 export function useMeetings() {
-  const ctx = useContext(MeetingsContext);
-  if (!ctx) throw new Error('useMeetings must be used within MeetingsProvider');
-  return ctx;
+  const context = useContext(MeetingsContext);
+  if (!context) {
+    throw new Error('useMeetings must be used within MeetingsProvider');
+  }
+  return context;
 }
