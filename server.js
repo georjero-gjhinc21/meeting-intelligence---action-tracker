@@ -35,7 +35,7 @@ app.post('/api/extract-actions', async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-1.5-flash',
       contents: `Analyze this meeting transcript and extract high-level action items.
 Only extract genuine commitments, decisions, follow-ups.
 
