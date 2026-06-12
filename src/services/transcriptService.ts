@@ -1,13 +1,139 @@
-import { Meeting, ActionItem, MeetingSource, StakeholderRole, TrackingLevel } from '../types';
+import { Meeting, ActionItem, MeetingSource, StakeholderRole, TrackingLevel, ExecutiveOffice, InsightCategory } from '../types';
+import { deriveCategoryFromLevel, deriveOfficesFromRole } from '../config/offices';
+// @ts-ignore - mammoth may not have types
+import mammoth from 'mammoth';
 
-const TEXT_EXTENSIONS = ['.txt', '.vtt', '.srt', '.md', '.json'];
+// Supported file extensions - including corporate document formats
+const TEXT_EXTENSIONS = [
+  '.txt', '.vtt', '.srt', '.md', '.json',  // Original text formats
+  '.docx', '.doc',                          // Microsoft Word
+  '.pdf',                                   // PDF documents
+  '.rtf',                                   // Rich Text Format
+  '.pptx', '.ppt'                          // PowerPoint (transcripts from slide notes)
+];
 
 export function isTranscriptFile(filename: string): boolean {
   const lower = filename.toLowerCase();
   return TEXT_EXTENSIONS.some(ext => lower.endsWith(ext));
 }
 
-export function readFileAsText(file: File): Promise<string> {
+/**
+ * Parse Microsoft Word (.docx, .doc) files
+ */
+async function parseWordDocument(file: File): Promise<string> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value || '';
+  } catch (error) {
+    console.error('Error parsing Word document:', error);
+    throw new Error('Failed to parse Word document');
+  }
+}
+
+/**
+ * Parse PDF files using pdf-parse
+ */
+async function parsePDF(file: File): Promise<string> {
+  try {
+    // Dynamically import pdf-parse
+    const pdfParseModule = await import('pdf-parse');
+    // @ts-ignore - pdf-parse has complex export structure
+    const pdfParse = pdfParseModule.default || pdfParseModule;
+    const arrayBuffer = await file.arrayBuffer();
+    const data = await pdfParse(Buffer.from(arrayBuffer));
+    return data.text || '';
+  } catch (error) {
+    console.error('Error parsing PDF:', error);
+    throw new Error('Failed to parse PDF document');
+  }
+}
+
+/**
+ * Parse PowerPoint files (.pptx) - extracts text from slides and notes
+ */
+async function parsePowerPoint(file: File): Promise<string> {
+  try {
+    // Note: pptx2json doesn't work in browser, so we'll use a simpler approach
+    // PowerPoint .pptx files are ZIP archives containing XML files
+    const JSZip = (await import('jszip')).default;
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+
+    let text = '';
+
+    // Extract text from slides
+    const slideFiles = Object.keys(zip.files).filter(name =>
+      name.startsWith('ppt/slides/slide') && name.endsWith('.xml')
+    );
+
+    for (const slidePath of slideFiles) {
+      const content = await zip.files[slidePath].async('text');
+      // Extract text between XML tags
+      const textMatches = content.match(/<a:t>([^<]+)<\/a:t>/g);
+      if (textMatches) {
+        textMatches.forEach(match => {
+          const extracted = match.replace(/<\/?a:t>/g, '');
+          text += extracted + ' ';
+        });
+        text += '\n\n';
+      }
+    }
+
+    return text.trim();
+  } catch (error) {
+    console.error('Error parsing PowerPoint:', error);
+    throw new Error('Failed to parse PowerPoint document');
+  }
+}
+
+/**
+ * Parse RTF files
+ */
+async function parseRTF(file: File): Promise<string> {
+  try {
+    const text = await file.text();
+    // Basic RTF stripping - remove RTF control codes
+    // This is a simple implementation; for complex RTF, consider a dedicated library
+    return text
+      .replace(/\\[a-z]{1,32}(-?\d{1,10})?[ ]?/g, '') // Remove RTF control words
+      .replace(/[{}]/g, '')                            // Remove braces
+      .replace(/\\\\/g, '\\')                          // Unescape backslashes
+      .replace(/\\'/g, "'")                            // Unescape quotes
+      .trim();
+  } catch (error) {
+    console.error('Error parsing RTF:', error);
+    throw new Error('Failed to parse RTF document');
+  }
+}
+
+/**
+ * Read file content based on file type
+ */
+export async function readFileAsText(file: File): Promise<string> {
+  const lower = file.name.toLowerCase();
+
+  // Microsoft Word documents
+  if (lower.endsWith('.docx') || lower.endsWith('.doc')) {
+    return parseWordDocument(file);
+  }
+
+  // PDF documents
+  if (lower.endsWith('.pdf')) {
+    return parsePDF(file);
+  }
+
+  // PowerPoint documents
+  if (lower.endsWith('.pptx') || lower.endsWith('.ppt')) {
+    return parsePowerPoint(file);
+  }
+
+  // RTF documents
+  if (lower.endsWith('.rtf')) {
+    return parseRTF(file);
+  }
+
+  // Plain text files (original behavior)
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
@@ -127,13 +253,15 @@ export async function processTranscriptFile(file: File, opts: ProcessOptions): P
       id: `act-${id}-${idx}`,
       title: a.title || 'Untitled Action',
       description: a.description || '',
-      role: (a.role as StakeholderRole) || StakeholderRole.COO,
+      role: (a.role as StakeholderRole) || StakeholderRole.INFORMED,
       level: (a.level as TrackingLevel) || TrackingLevel.TASK,
       status: 'Pending',
       priority: (a.priority as ActionItem['priority']) || 'Medium',
       sourceMeetingId: id,
       dueDate: a.dueDate,
       chainOfThought: a.chainOfThought,
+      offices: a.offices?.length ? (a.offices as ExecutiveOffice[]) : deriveOfficesFromRole(a.role),
+      category: a.category || deriveCategoryFromLevel(a.level),
     }));
 
     opts.onActionsExtracted(newActions);

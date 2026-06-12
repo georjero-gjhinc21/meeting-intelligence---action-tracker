@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useMeetings } from '../context/MeetingsContext';
-import { StakeholderRole, ActionItem, TrackingLevel } from '../types';
+import { StakeholderRole, ActionItem, TrackingLevel, ExecutiveOffice, InsightCategory } from '../types';
+import { deriveCategoryFromLevel, deriveOfficesFromRole } from '../config/offices';
 import ActionDetailModal from './ActionDetailModal';
 
 export default function ActionExtraction() {
@@ -45,13 +46,15 @@ export default function ActionExtraction() {
         id: `EXT-${Date.now()}-${idx}`,
         title: a.title || 'Untitled Action',
         description: a.description || '',
-        role: (a.role as StakeholderRole) || StakeholderRole.COO,
+        role: (a.role as StakeholderRole) || StakeholderRole.INFORMED,
         level: (a.level as TrackingLevel) || TrackingLevel.TASK,
         status: 'Pending',
         priority: (a.priority as ActionItem['priority']) || 'Medium',
         sourceMeetingId: 'm3',
         dueDate: a.dueDate,
         chainOfThought: a.chainOfThought,
+        offices: a.offices?.length ? (a.offices as ExecutiveOffice[]) : deriveOfficesFromRole(a.role),
+        category: a.category || deriveCategoryFromLevel(a.level),
       }));
 
       addActions(newActions);
@@ -187,7 +190,7 @@ export default function ActionExtraction() {
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl relative overflow-hidden">
                   <div className="flex items-center gap-2 mb-3 relative z-10">
                     <BrainCircuit className="w-3.5 h-3.5 text-indigo-600" />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Axiom Intelligence Context</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Zireh Intelligence Context</span>
                   </div>
                   <p className="text-xs text-slate-500 font-mono italic leading-relaxed relative z-10 border-l-2 border-slate-200 pl-3">
                     "{action.chainOfThought}"

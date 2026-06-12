@@ -1,11 +1,9 @@
 export enum StakeholderRole {
-  BOARD = 'Board',
-  CEO = 'CEO',
-  CFO = 'CFO',
-  CIO = 'CIO',
-  CISO = 'CISO',
-  CTO = 'CTO',
-  COO = 'COO'
+  LEADER = 'Leader',
+  DRIVER = 'Driver',
+  SUPPORTER = 'Supporter',
+  CONTRIBUTOR = 'Contributor',
+  INFORMED = 'Informed'
 }
 
 export enum TrackingLevel {
@@ -15,6 +13,26 @@ export enum TrackingLevel {
   PROGRAM = 'Program',
   PROJECT = 'Project',
   TASK = 'Task'
+}
+
+export enum ExecutiveOffice {
+  BOARD = 'Board',
+  CEO = 'CEO',
+  CFO = 'CFO',
+  CIO = 'CIO',
+  CMO = 'CMO',
+  CISO = 'CISO',
+  CTO = 'CTO',
+  COO = 'COO',
+}
+
+export enum InsightCategory {
+  ACTION = 'Action',
+  PROGRAM = 'Program',
+  RISK = 'Risk',
+  ISSUE = 'Issue',
+  REGULATORY = 'Regulatory',
+  MISSION = 'Mission',
 }
 
 export interface ActionItem {
@@ -28,6 +46,8 @@ export interface ActionItem {
   sourceMeetingId: string;
   dueDate?: string;
   chainOfThought?: string;
+  offices: ExecutiveOffice[];
+  category: InsightCategory;
 }
 
 export type MeetingSource = 'Local' | 'Google Drive' | 'Microsoft Teams' | 'Manual';
