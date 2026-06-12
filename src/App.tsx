@@ -8,7 +8,8 @@ import MeetingList from './components/MeetingList';
 import HierarchyView from './components/HierarchyView';
 import ActionExtraction from './components/ActionExtraction';
 import SalesforceSync from './components/SalesforceSync';
-import { BrainCircuit } from 'lucide-react';
+import ExecutiveHome from './components/ExecutiveHome';
+import { BrainCircuit, Lock } from 'lucide-react';
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -18,16 +19,17 @@ if (!CLERK_KEY) {
 
 function AuthenticatedApp() {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = React.useState('dashboard');
+  const [activeTab, setActiveTab] = React.useState('executive');
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'executive': return <ExecutiveHome />;
       case 'dashboard': return <Dashboard />;
       case 'meetings': return <MeetingList />;
       case 'hierarchy': return <HierarchyView />;
       case 'extracts': return <ActionExtraction />;
       case 'integrations': return <SalesforceSync />;
-      default: return <Dashboard />;
+      default: return <ExecutiveHome />;
     }
   };
 
@@ -44,10 +46,17 @@ function AuthenticatedApp() {
           <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active System</span>
-              <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-indigo-100">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                Axiom-LLM-v4 Active
-              </div>
+              {activeTab === 'executive' ? (
+                <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-emerald-100">
+                  <Lock className="w-3 h-3" />
+                  Derived from meeting records
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-indigo-100">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                  Zireh-LLM-v4 Active
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-6">
@@ -91,16 +100,18 @@ function AuthenticatedApp() {
             </AnimatePresence>
           </section>
 
-          <footer className="h-10 bg-white border-t border-slate-200 flex items-center justify-between px-8 text-[10px] text-slate-400 font-mono tracking-tighter shrink-0">
-            <div>METRIC_CONFIDENCE: 0.9841 // ROLE_VALIDATION: ENABLE_CHOSEN</div>
-            <div className="flex items-center gap-4">
-              <span>TRANSCRIPTION_LATENCY: 420ms</span>
-              <div className="flex items-center gap-1">
-                <BrainCircuit className="w-3 h-3 text-blue-500" />
-                GEMINI_INTEL_ENGINE
+          {activeTab !== 'executive' && (
+            <footer className="h-10 bg-white border-t border-slate-200 flex items-center justify-between px-8 text-[10px] text-slate-400 font-mono tracking-tighter shrink-0">
+              <div>METRIC_CONFIDENCE: 0.9841 // ROLE_VALIDATION: ENABLE_CHOSEN</div>
+              <div className="flex items-center gap-4">
+                <span>TRANSCRIPTION_LATENCY: 420ms</span>
+                <div className="flex items-center gap-1">
+                  <BrainCircuit className="w-3 h-3 text-blue-500" />
+                  GEMINI_INTEL_ENGINE
+                </div>
               </div>
-            </div>
-          </footer>
+            </footer>
+          )}
         </main>
       </div>
     </MeetingsProvider>

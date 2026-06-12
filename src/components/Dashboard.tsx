@@ -45,7 +45,7 @@ export default function Dashboard() {
   return (
     <div className="p-8 space-y-8" id="dashboard-view">
       <header>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Executive Intelligence Overview</h1>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Operations overview</h1>
         <p className="text-slate-500 text-sm mt-1">Real-time tracking of strategic initiatives from meeting transcripts.</p>
       </header>
 

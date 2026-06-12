@@ -98,7 +98,7 @@ export default function MeetingList() {
     async (files: File[], source: MeetingSource, folderPath?: string) => {
       const transcripts = files.filter((f) => isTranscriptFile(f.name));
       if (transcripts.length === 0) {
-        showToast('err', `No transcript files found. Supported: .txt, .vtt, .srt, .md, .json`);
+        showToast('err', `No supported files found. Supported: .txt, .vtt, .srt, .md, .json, .docx, .doc, .pdf, .rtf, .pptx`);
         return;
       }
 
@@ -286,7 +286,7 @@ export default function MeetingList() {
         ref={fileInputRef}
         type="file"
         multiple
-        accept=".txt,.vtt,.srt,.md,.json"
+        accept=".txt,.vtt,.srt,.md,.json,.docx,.doc,.pdf,.rtf,.pptx,.ppt"
         onChange={handleLocalFiles}
         className="hidden"
       />
@@ -304,7 +304,7 @@ export default function MeetingList() {
         ref={teamsInputRef}
         type="file"
         multiple
-        accept=".txt,.vtt,.srt,.docx"
+        accept=".txt,.vtt,.srt,.md,.json,.docx,.doc,.pdf,.rtf,.pptx,.ppt"
         onChange={handleTeams}
         className="hidden"
       />
@@ -427,7 +427,7 @@ export default function MeetingList() {
           <div>
             <p className="text-sm font-bold text-slate-700">Drop transcript files or folders here</p>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              Supports .txt, .vtt, .srt, .md — Teams/Meet exports work directly
+              Supports .txt, .vtt, .srt, .md, .docx, .pdf, .pptx, .rtf — All corporate formats
             </p>
           </div>
         </div>

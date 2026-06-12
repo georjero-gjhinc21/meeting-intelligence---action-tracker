@@ -61,7 +61,7 @@ export default function SignInScreen() {
             <div className="w-5 h-5 bg-white rounded-md" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">AXIOM</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">ZIREH</h1>
             <p className="text-sm text-slate-500 font-medium tracking-wide">Executive</p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function SignInScreen() {
               <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
                 Authenticated Access Required
               </span>
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Sign in to AXIOM Executive</h2>
+              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Sign in to ZIREH Executive</h2>
               <p className="text-sm text-slate-500 leading-relaxed">
                 Strategic intelligence extracted from your meetings — secured behind enterprise SSO.
               </p>
@@ -133,7 +133,7 @@ export default function SignInScreen() {
 
           <div className="px-10 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              AXIOM-LLM-v4
+              ZIREH-LLM-v4
             </span>
             <span className="text-[10px] font-mono text-slate-400 tracking-tighter">
               METRIC_CONFIDENCE: 0.9841

@@ -37,7 +37,7 @@ export function AuthGate({ children, fallback }: Props) {
     return fallback ?? (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md space-y-6">
-          <h1 className="text-2xl font-bold text-slate-800">Axiom Intelligence</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Zireh Intelligence</h1>
           <p className="text-slate-600">Sign in to access your meeting intelligence</p>
           <form
             onSubmit={async (e) => {

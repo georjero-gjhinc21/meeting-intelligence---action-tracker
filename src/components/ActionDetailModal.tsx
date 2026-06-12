@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, BrainCircuit, ExternalLink, MessageSquare, CheckCircle2, Clock } from 'lucide-react';
+import { X, BrainCircuit, ExternalLink, MessageSquare, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { ActionItem } from '../types';
+import { salesforceService } from '../services/salesforceService';
 
 interface ActionDetailModalProps {
   action: ActionItem | null;
@@ -9,7 +10,34 @@ interface ActionDetailModalProps {
 }
 
 export default function ActionDetailModal({ action, onClose }: ActionDetailModalProps) {
+  const [isPushing, setIsPushing] = React.useState(false);
+  const [pushResult, setPushResult] = React.useState<{ success: boolean; message: string } | null>(null);
+
   if (!action) return null;
+
+  const handlePushToSalesforce = async () => {
+    setIsPushing(true);
+    setPushResult(null);
+
+    try {
+      if (!salesforceService.isAuthenticated()) {
+        setPushResult({ success: false, message: 'Not connected to Salesforce. Go to Salesforce Sync tab to connect.' });
+        return;
+      }
+
+      const result = await salesforceService.pushActionToSalesforce(action);
+
+      if (result.success) {
+        setPushResult({ success: true, message: `Successfully pushed to Salesforce! Task ID: ${result.recordId}` });
+      } else {
+        setPushResult({ success: false, message: result.error || 'Failed to push to Salesforce' });
+      }
+    } catch (error: any) {
+      setPushResult({ success: false, message: error.message || 'An error occurred' });
+    } finally {
+      setIsPushing(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -82,7 +110,7 @@ export default function ActionDetailModal({ action, onClose }: ActionDetailModal
                   <BrainCircuit className="absolute -top-2 -right-2 w-16 h-16 text-indigo-600/5 rotate-12" />
                   <div className="flex items-center gap-2 mb-4">
                     <BrainCircuit className="w-4 h-4 text-indigo-600" />
-                    <h3 className="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Axiom Intelligence</h3>
+                    <h3 className="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Zireh Intelligence</h3>
                   </div>
                   <div className="border-l-2 border-indigo-200 pl-4 py-1">
                     <p className="text-xs text-indigo-800 font-mono italic leading-relaxed">
@@ -107,15 +135,34 @@ export default function ActionDetailModal({ action, onClose }: ActionDetailModal
               </section>
             </div>
 
-            <footer className="pt-8 border-t border-slate-100 flex gap-4">
-              <button className="flex-1 bg-slate-900 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-100">
-                <ExternalLink className="w-4 h-4" />
-                Push to Salesforce
-              </button>
-              <button className="flex-1 bg-white border border-slate-200 text-slate-600 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
-                <MessageSquare className="w-4 h-4" />
-                View Segment
-              </button>
+            <footer className="pt-8 border-t border-slate-100 space-y-4">
+              {pushResult && (
+                <div className={`px-4 py-3 rounded-xl border text-sm ${
+                  pushResult.success
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-red-50 border-red-200 text-red-800'
+                }`}>
+                  {pushResult.message}
+                </div>
+              )}
+              <div className="flex gap-4">
+                <button
+                  onClick={handlePushToSalesforce}
+                  disabled={isPushing}
+                  className="flex-1 bg-slate-900 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-100 disabled:opacity-50"
+                >
+                  {isPushing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ExternalLink className="w-4 h-4" />
+                  )}
+                  {isPushing ? 'Pushing...' : 'Push to Salesforce'}
+                </button>
+                <button className="flex-1 bg-white border border-slate-200 text-slate-600 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
+                  <MessageSquare className="w-4 h-4" />
+                  View Segment
+                </button>
+              </div>
             </footer>
           </div>
         </motion.div>
