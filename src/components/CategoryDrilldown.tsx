@@ -1,6 +1,5 @@
 import React from 'react';
 import { InsightCategory, ActionItem, ExecutiveOffice } from '../types';
-import { MOCK_ACTIONS } from '../constants';
 import { OFFICE_LABELS } from '../config/offices';
 import { CATEGORY_STYLES } from '../config/dashboard';
 import DetailItemTable from './DetailItemTable';
@@ -8,19 +7,16 @@ import DetailItemTable from './DetailItemTable';
 interface Props {
   office: ExecutiveOffice;
   category: InsightCategory;
-  actions?: ActionItem[];
+  actions: ActionItem[];
   onBack: () => void;
 }
 
-const categoryConfig = CATEGORY_STYLES;
-
 export default function CategoryDrilldown({ office, category, actions, onBack }: Props) {
-  const config = categoryConfig[category];
+  const config = CATEGORY_STYLES[category];
   const Icon = config.icon;
 
-  const sourceActions = actions ?? MOCK_ACTIONS;
-  const filteredItems = sourceActions.filter(action =>
-    action.offices.includes(office) && action.category === category
+  const filteredItems = actions.filter(action =>
+    action.category === category
   );
 
   return (

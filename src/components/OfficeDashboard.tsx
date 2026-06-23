@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { InsightCategory, ActionItem, ExecutiveOffice } from '../types';
-import { MOCK_ACTIONS } from '../constants';
 import { OFFICE_LABELS } from '../config/offices';
 import { OFFICE_CATEGORY_TILES, CATEGORY_STYLES } from '../config/dashboard';
 import CategoryDrilldown from './CategoryDrilldown';
@@ -8,21 +7,18 @@ import CategoryDrilldown from './CategoryDrilldown';
 interface Props {
   office: ExecutiveOffice;
   meetingId?: string;
-  actions?: ActionItem[];
+  actions: ActionItem[];
 }
-
-const categoryConfig = CATEGORY_STYLES;
 
 export default function OfficeDashboard({ office, meetingId, actions }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<InsightCategory | null>(null);
 
-  const sourceActions = actions ?? MOCK_ACTIONS;
-  const officeActions = sourceActions.filter(action =>
+  const officeActions = actions.filter(action =>
     action.offices.includes(office) && (!meetingId || action.sourceMeetingId === meetingId)
   );
 
   const categoryCards = OFFICE_CATEGORY_TILES.map(category => {
-    const config = categoryConfig[category];
+    const config = CATEGORY_STYLES[category];
     const Icon = config.icon;
     const count = officeActions.filter(action => action.category === category).length;
     const categoryItems = officeActions.filter(action => action.category === category);
