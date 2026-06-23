@@ -9,6 +9,7 @@ import HierarchyView from './components/HierarchyView';
 import ActionExtraction from './components/ActionExtraction';
 import SalesforceSync from './components/SalesforceSync';
 import ExecutiveHome from './components/ExecutiveHome';
+import { ExecutiveNavTarget } from './config/dashboard';
 import { BrainCircuit, Lock } from 'lucide-react';
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -20,10 +21,16 @@ if (!CLERK_KEY) {
 function AuthenticatedApp() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = React.useState('executive');
+  const [executiveNav, setExecutiveNav] = React.useState<ExecutiveNavTarget | null>('board');
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'executive': return <ExecutiveHome />;
+      case 'executive': return (
+        <ExecutiveHome
+          navTarget={executiveNav}
+          onNavHandled={() => setExecutiveNav(null)}
+        />
+      );
       case 'dashboard': return <Dashboard />;
       case 'meetings': return <MeetingList />;
       case 'hierarchy': return <HierarchyView />;
@@ -40,7 +47,12 @@ function AuthenticatedApp() {
   return (
     <MeetingsProvider>
       <div className="flex h-screen bg-slate-50 overflow-hidden font-sans" id="app-container">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          executiveNav={executiveNav}
+          setExecutiveNav={setExecutiveNav}
+        />
 
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">

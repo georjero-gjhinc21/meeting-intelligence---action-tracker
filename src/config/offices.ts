@@ -37,5 +37,19 @@ export function deriveCategoryFromLevel(level: string): InsightCategory {
 }
 
 export function deriveOfficesFromRole(role: string): ExecutiveOffice[] {
-  return [ExecutiveOffice.CEO];
+  switch (role) {
+    case 'Leader':
+      return [ExecutiveOffice.BOARD];
+    case 'Driver':
+      return [ExecutiveOffice.CEO];
+    case 'Contributor':
+      return [ExecutiveOffice.CFO];
+    case 'Supporter':
+      return [ExecutiveOffice.CIO];
+    case 'Informed':
+      return [ExecutiveOffice.CMO];
+    default:
+      return [ExecutiveOffice.CEO];
+  }
 }
+

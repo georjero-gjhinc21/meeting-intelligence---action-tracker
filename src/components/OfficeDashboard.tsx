@@ -1,68 +1,27 @@
-import React from 'react';
-import { useState } from 'react';
-import { AlertTriangle, FileText, Shield, AlertCircle, Scale, Target } from 'lucide-react';
+import React, { useState } from 'react';
 import { InsightCategory, ActionItem, ExecutiveOffice } from '../types';
 import { MOCK_ACTIONS } from '../constants';
 import { OFFICE_LABELS } from '../config/offices';
+import { OFFICE_CATEGORY_TILES, CATEGORY_STYLES } from '../config/dashboard';
 import CategoryDrilldown from './CategoryDrilldown';
 
 interface Props {
   office: ExecutiveOffice;
+  meetingId?: string;
+  actions?: ActionItem[];
 }
 
-const categoryConfig = {
-  [InsightCategory.ACTION]: {
-    label: 'Actions',
-    icon: FileText,
-    color: 'text-slate-700',
-    bgColor: 'bg-white',
-    borderColor: 'border-slate-200',
-  },
-  [InsightCategory.PROGRAM]: {
-    label: 'Programs',
-    icon: Target,
-    color: 'text-slate-700',
-    bgColor: 'bg-white',
-    borderColor: 'border-slate-200',
-  },
-  [InsightCategory.RISK]: {
-    label: 'Risks',
-    icon: AlertTriangle,
-    color: 'text-slate-700',
-    bgColor: 'bg-white',
-    borderColor: 'border-slate-200',
-  },
-  [InsightCategory.ISSUE]: {
-    label: 'Issues',
-    icon: AlertCircle,
-    color: 'text-slate-700',
-    bgColor: 'bg-white',
-    borderColor: 'border-slate-200',
-  },
-  [InsightCategory.REGULATORY]: {
-    label: 'Regulatory',
-    icon: Shield,
-    color: 'text-slate-700',
-    bgColor: 'bg-white',
-    borderColor: 'border-slate-200',
-  },
-  [InsightCategory.MISSION]: {
-    label: 'Mission',
-    icon: Target,
-    color: 'text-slate-700',
-    bgColor: 'bg-white',
-    borderColor: 'border-slate-200',
-  },
-};
+const categoryConfig = CATEGORY_STYLES;
 
-export default function OfficeDashboard({ office }: Props) {
+export default function OfficeDashboard({ office, meetingId, actions }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<InsightCategory | null>(null);
 
-  const officeActions = MOCK_ACTIONS.filter(action => 
-    action.offices.includes(office)
+  const sourceActions = actions ?? MOCK_ACTIONS;
+  const officeActions = sourceActions.filter(action =>
+    action.offices.includes(office) && (!meetingId || action.sourceMeetingId === meetingId)
   );
 
-  const categoryCards = Object.values(InsightCategory).map(category => {
+  const categoryCards = OFFICE_CATEGORY_TILES.map(category => {
     const config = categoryConfig[category];
     const Icon = config.icon;
     const count = officeActions.filter(action => action.category === category).length;
@@ -122,6 +81,7 @@ export default function OfficeDashboard({ office }: Props) {
       <CategoryDrilldown
         office={office}
         category={selectedCategory}
+        actions={officeActions}
         onBack={() => setSelectedCategory(null)}
       />
     );
@@ -154,6 +114,9 @@ export default function OfficeDashboard({ office }: Props) {
                       item.category === InsightCategory.ISSUE ? 'bg-orange-100 text-orange-700' :
                       item.category === InsightCategory.ACTION ? 'bg-slate-100 text-slate-700' :
                       item.category === InsightCategory.PROGRAM ? 'bg-blue-100 text-blue-700' :
+                      item.category === InsightCategory.OPERATIONS ? 'bg-cyan-100 text-cyan-700' :
+                      item.category === InsightCategory.CEO_ITEM ? 'bg-indigo-100 text-indigo-700' :
+                      item.category === InsightCategory.CFO_ITEM ? 'bg-emerald-100 text-emerald-700' :
                       'bg-purple-100 text-purple-700'
                     }}`}>{item.category}</span>
                     <span className="text-sm font-medium text-slate-900">{item.title}</span>

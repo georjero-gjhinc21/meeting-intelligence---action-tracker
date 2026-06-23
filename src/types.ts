@@ -29,10 +29,13 @@ export enum ExecutiveOffice {
 export enum InsightCategory {
   ACTION = 'Action',
   PROGRAM = 'Program',
+  OPERATIONS = 'Operations',
   RISK = 'Risk',
   ISSUE = 'Issue',
   REGULATORY = 'Regulatory',
   MISSION = 'Mission',
+  CEO_ITEM = 'CEO Item',
+  CFO_ITEM = 'CFO Item',
 }
 
 export interface ActionItem {
@@ -63,4 +66,6 @@ export interface Meeting {
   source?: MeetingSource;
   transcript?: string;
   errorMessage?: string;
+  participant?: string;
+  place?: string;
 }

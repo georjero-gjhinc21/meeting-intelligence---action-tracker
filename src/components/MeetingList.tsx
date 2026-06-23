@@ -85,7 +85,9 @@ export default function MeetingList() {
     return (
       m.title.toLowerCase().includes(q) ||
       m.folderPath.toLowerCase().includes(q) ||
-      (m.platform || '').toLowerCase().includes(q)
+      (m.platform || '').toLowerCase().includes(q) ||
+      (m.participant || '').toLowerCase().includes(q) ||
+      (m.place || '').toLowerCase().includes(q)
     );
   });
 
@@ -524,6 +526,8 @@ export default function MeetingList() {
               <th className="px-8 py-3 w-1/3">Meeting</th>
               <th className="px-8 py-3">Path</th>
               <th className="px-8 py-3">Date</th>
+              <th className="px-8 py-3">Participant</th>
+              <th className="px-8 py-3">Place</th>
               <th className="px-8 py-3 text-center">Status</th>
               <th className="px-8 py-3 text-right">Action</th>
             </tr>
@@ -531,7 +535,7 @@ export default function MeetingList() {
           <tbody className="divide-y divide-slate-100">
             {filteredMeetings.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-8 py-12 text-center text-sm text-slate-400">
+                <td colSpan={7} className="px-8 py-12 text-center text-sm text-slate-400">
                   {meetings.length === 0
                     ? 'No meetings yet — connect a source above to get started.'
                     : 'No meetings match the current filter.'}
@@ -579,6 +583,12 @@ export default function MeetingList() {
                 </td>
                 <td className="px-8 py-5 text-[10px] font-bold text-slate-600 uppercase">
                   {meeting.date}
+                </td>
+                <td className="px-8 py-5 text-[10px] text-slate-500">
+                  {meeting.participant || '\u2014'}
+                </td>
+                <td className="px-8 py-5 text-[10px] text-slate-500">
+                  {meeting.place || '\u2014'}
                 </td>
                 <td className="px-8 py-5 text-center">
                   <span
