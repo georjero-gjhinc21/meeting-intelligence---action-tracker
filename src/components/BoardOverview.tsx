@@ -2,7 +2,6 @@ import React from 'react';
 import { User, Calendar, Hash, MapPin } from 'lucide-react';
 import { useUser } from '@clerk/clerk-react';
 import { ExecutiveOffice, InsightCategory } from '../types';
-import { MOCK_ACTIONS, MOCK_MEETINGS } from '../constants';
 import { ACTIVE_OFFICES, OFFICE_LABELS } from '../config/offices';
 import {
   BOARD_SUMMARY_TILES,
@@ -12,12 +11,12 @@ import {
   countByCategory,
   filterActionsByVisibility,
   filterActionsForMeeting,
-  filterMeetingsByVisibility,
   formatMeetingDate,
   getActionsForCategory,
   getActionsForDetailTab,
 } from '../config/dashboard';
 import { useVisibilityRule } from '../hooks/useUserPosition';
+import { useMeetings } from '../context/MeetingsContext';
 import DetailItemTable from './DetailItemTable';
 import OfficeDashboard from './OfficeDashboard';
 
@@ -29,14 +28,15 @@ interface Props {
 export default function BoardOverview({ navTarget, onNavHandled }: Props) {
   const visibility = useVisibilityRule();
   const { user } = useUser();
+  const { meetings: allMeetings, actions: allActions } = useMeetings();
 
   const visibleMeetings = React.useMemo(
-    () => filterMeetingsByVisibility([...MOCK_MEETINGS], visibility),
-    [visibility]
+    () => allMeetings.filter(m => visibility.accessibleOffices.some(o => o === ExecutiveOffice.BOARD)),
+    [allMeetings, visibility]
   );
 
   const [selectedMeetingId, setSelectedMeetingId] = React.useState<string>(
-    visibleMeetings[0]?.id ?? MOCK_MEETINGS[0].id
+    visibleMeetings[0]?.id ?? allMeetings[0]?.id ?? ''
   );
   const [selectedOffice, setSelectedOffice] = React.useState<ExecutiveOffice>(
     visibility.accessibleOffices[0] ?? ExecutiveOffice.BOARD
@@ -46,7 +46,7 @@ export default function BoardOverview({ navTarget, onNavHandled }: Props) {
 
   React.useEffect(() => {
     if (!visibleMeetings.some(meeting => meeting.id === selectedMeetingId)) {
-      setSelectedMeetingId(visibleMeetings[0]?.id ?? MOCK_MEETINGS[0].id);
+      setSelectedMeetingId(visibleMeetings[0]?.id ?? '');
     }
   }, [visibleMeetings, selectedMeetingId]);
 
@@ -83,9 +83,9 @@ export default function BoardOverview({ navTarget, onNavHandled }: Props) {
   }, [navTarget, onNavHandled]);
 
   const meetingActions = React.useMemo(() => {
-    const scoped = filterActionsForMeeting(MOCK_ACTIONS, selectedMeetingId);
+    const scoped = filterActionsForMeeting(allActions, selectedMeetingId);
     return filterActionsByVisibility(scoped, visibility);
-  }, [selectedMeetingId, visibility]);
+  }, [allActions, selectedMeetingId, visibility]);
 
   const detailItems = React.useMemo(() => {
     if (selectedTileCategory) {
