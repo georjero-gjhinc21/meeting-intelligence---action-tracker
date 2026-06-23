@@ -1,7 +1,5 @@
 import React from 'react';
 import { 
-  ArrowRight, 
-  ChevronDown, 
   ChevronRight, 
   ListChecks, 
   Target, 
@@ -10,7 +8,6 @@ import {
   ClipboardList, 
   Layers,
   Search,
-  Filter
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { TrackingLevel } from '../types';

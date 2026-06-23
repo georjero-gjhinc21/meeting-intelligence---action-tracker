@@ -4,7 +4,6 @@ import {
   FileText,
   Network,
   Sparkles,
-  Settings,
   LogOut,
   Link as LinkIcon,
   LayoutDashboard as ExecutiveIcon,

@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Database,
   RefreshCw,
-  ExternalLink,
   CheckCircle2,
   AlertCircle,
   Link2,
