@@ -14,7 +14,7 @@ import { deriveCategoryFromLevel, deriveOfficesFromRole } from '../config/office
 import ActionDetailModal from './ActionDetailModal';
 
 export default function ActionExtraction() {
-  const { actions, addActions } = useMeetings();
+  const { meetings, actions, addActions } = useMeetings();
   const [selectedRole, setSelectedRole] = React.useState<StakeholderRole | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedAction, setSelectedAction] = React.useState<ActionItem | null>(null);
@@ -50,7 +50,7 @@ export default function ActionExtraction() {
         level: (a.level as TrackingLevel) || TrackingLevel.TASK,
         status: 'Pending',
         priority: (a.priority as ActionItem['priority']) || 'Medium',
-        sourceMeetingId: 'm3',
+        sourceMeetingId: meetings[0]?.id || 'm-unknown',
         dueDate: a.dueDate,
         chainOfThought: a.chainOfThought,
         offices: a.offices?.length ? (a.offices as ExecutiveOffice[]) : deriveOfficesFromRole(a.role),
@@ -73,27 +73,14 @@ export default function ActionExtraction() {
     a.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'CEO': return 'bg-indigo-600';
-      case 'CFO': return 'bg-emerald-600';
-      case 'CIO': return 'bg-purple-600';
-      case 'CISO': return 'bg-amber-600';
-      case 'Board': return 'bg-slate-900';
-      default: return 'bg-slate-600';
-    }
+  const ROLE_STYLES: Record<string, { dot: string; bg: string }> = {
+    CEO: { dot: 'bg-indigo-600', bg: 'bg-indigo-50 border-indigo-100 text-indigo-700' },
+    CFO: { dot: 'bg-emerald-600', bg: 'bg-emerald-50 border-emerald-100 text-emerald-700' },
+    CIO: { dot: 'bg-purple-600', bg: 'bg-purple-50 border-purple-100 text-purple-700' },
+    CISO: { dot: 'bg-amber-600', bg: 'bg-amber-50 border-amber-100 text-amber-700' },
+    Board: { dot: 'bg-slate-900', bg: 'bg-slate-100 border-slate-200 text-slate-800' },
   };
-
-  const getRoleBg = (role: string) => {
-    switch (role) {
-      case 'CEO': return 'bg-indigo-50 border-indigo-100 text-indigo-700';
-      case 'CFO': return 'bg-emerald-50 border-emerald-100 text-emerald-700';
-      case 'CIO': return 'bg-purple-50 border-purple-100 text-purple-700';
-      case 'CISO': return 'bg-amber-50 border-amber-100 text-amber-700';
-      case 'Board': return 'bg-slate-100 border-slate-200 text-slate-800';
-      default: return 'bg-slate-50 border-slate-100 text-slate-600';
-    }
-  };
+  const roleStyle = (role: string) => ROLE_STYLES[role] || { dot: 'bg-slate-600', bg: 'bg-slate-50 border-slate-100 text-slate-600' };
 
   return (
     <div className="p-8 space-y-8" id="extracts-view">
@@ -144,7 +131,7 @@ export default function ActionExtraction() {
                 selectedRole === role ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              <div className={`w-1.5 h-1.5 rounded-full ${selectedRole === role ? 'bg-white' : getRoleColor(role)}`} />
+              <div className={`w-1.5 h-1.5 rounded-full ${selectedRole === role ? 'bg-white' : roleStyle(role).dot}`} />
               {role}
             </button>
           ))}
@@ -177,7 +164,7 @@ export default function ActionExtraction() {
                     {action.title}
                   </h3>
                 </div>
-                <div className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest ${getRoleBg(action.role)}`}>
+                <div className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest ${roleStyle(action.role).bg}`}>
                   {action.role}
                 </div>
               </div>

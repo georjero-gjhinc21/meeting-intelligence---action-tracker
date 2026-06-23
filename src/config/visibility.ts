@@ -185,10 +185,4 @@ export function getVisibilityRule(position?: Position | string | null): Visibili
   return DEFAULT_VISIBILITY;
 }
 
-export function filterByVisibility<T extends { office: ExecutiveOffice }>(
-  items: T[],
-  position: Position
-): T[] {
-  const rule = getVisibilityRule(position);
-  return items.filter(item => rule.accessibleOffices.includes(item.office));
-}
+

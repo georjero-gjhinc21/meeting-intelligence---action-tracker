@@ -112,11 +112,6 @@ export function filterActionsByVisibility(actions: ActionItem[], rule: Visibilit
   );
 }
 
-export function filterMeetingsByVisibility(meetings: Meeting[], rule: VisibilityRule): Meeting[] {
-  if (rule.canViewAllMeetings) return meetings;
-  return meetings.length > 0 ? [meetings[0]] : [];
-}
-
 export function countByCategory(actions: ActionItem[], category: InsightCategory): number {
   return actions.filter(action => action.category === category).length;
 }
