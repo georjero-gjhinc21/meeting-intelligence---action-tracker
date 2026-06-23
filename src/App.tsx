@@ -8,7 +8,7 @@ import MeetingList from './components/MeetingList';
 import HierarchyView from './components/HierarchyView';
 import ActionExtraction from './components/ActionExtraction';
 import SalesforceSync from './components/SalesforceSync';
-import ExecutiveHome from './components/ExecutiveHome';
+import BoardOverview from './components/BoardOverview';
 import { ExecutiveNavTarget } from './config/dashboard';
 import { BrainCircuit, Lock } from 'lucide-react';
 
@@ -26,7 +26,7 @@ function AuthenticatedApp() {
   const renderContent = () => {
     switch (activeTab) {
       case 'executive': return (
-        <ExecutiveHome
+        <BoardOverview
           navTarget={executiveNav}
           onNavHandled={() => setExecutiveNav(null)}
         />
@@ -36,7 +36,7 @@ function AuthenticatedApp() {
       case 'hierarchy': return <HierarchyView />;
       case 'extracts': return <ActionExtraction />;
       case 'integrations': return <SalesforceSync />;
-      default: return <ExecutiveHome />;
+      default: return <BoardOverview />;
     }
   };
 
